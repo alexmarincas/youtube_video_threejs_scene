@@ -90,8 +90,7 @@ function VideoElement( videoID, x, y, z ) {
  group.add( new VideoElement( 'Bf_YemfEaDs', 0, 0, 240) );
  scene.add( group );
 
- console.log(group)
-
+ 
 /**
  * Animate
  */
