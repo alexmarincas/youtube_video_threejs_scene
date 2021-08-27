@@ -1,7 +1,10 @@
 {
   "repository": "#",
+  "homepage": "https://alexmarincas.github.io/youtube_video_threejs",
   "license": "UNLICENSED",
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
     "build": "webpack --config ./bundler/webpack.prod.js",
     "dev": "webpack serve --config ./bundler/webpack.dev.js"
   },
@@ -24,5 +27,8 @@
     "webpack-cli": "^4.7.2",
     "webpack-dev-server": "^3.11.2",
     "webpack-merge": "^5.8.0"
+  },
+  "devDependencies": {
+    "gh-pages": "^3.2.3"
   }
 }
