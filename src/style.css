@@ -31,14 +31,15 @@ body
 .video_element{
     width: 480px;
     height: 360px;
-    background-color: #FFF;
+    background: url(./loading.gif);
+    background-size: contain;
     overflow: hidden;
     box-shadow: 0 0 100px rgba(0,0,0,.1);
+    border-radius: 5px;
 }
 
 .video_element iframe{
     width: 100%;
     height: 100%;
     border: none;
-    border-radius: 5px;
 }
