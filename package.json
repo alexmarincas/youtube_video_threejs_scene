@@ -1,6 +1,6 @@
 {
   "repository": "#",
-  "homepage": "https://alexmarincas.github.io/youtube_video_threejs",
+  "homepage": "https://alexmarincas.github.io/youtube_video_threejs_scene",
   "license": "UNLICENSED",
   "scripts": {
     "predeploy": "npm run build",

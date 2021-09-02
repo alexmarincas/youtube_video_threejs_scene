@@ -1,4 +1,4 @@
-import './primary.css'
+import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
@@ -10,6 +10,7 @@ import { DoubleSide } from 'three';
  * Scene
  */
 const scene = new THREE.Scene()
+const root = new THREE.Object3D()
 
 /**
  * Cameras
@@ -29,7 +30,8 @@ css3DContainer.appendChild(css3DRenderer.domElement)
 const webglCanvas = document.querySelector('#webgl')
 const webglRenderer = new THREE.WebGLRenderer({
 canvas: webglCanvas,
-antialias: true
+antialias: true,
+alpha: true
 })
 webglRenderer.outputEncoding = THREE.sRGBEncoding
 webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -41,6 +43,8 @@ webglRenderer.setClearColor('#FF856B')
  const controls = new OrbitControls(camera, css3DContainer)
  controls.enableDamping = true
  controls.rotateSpeed = 4
+ controls.minPolarAngle = 0
+ controls.maxPolarAngle = 1.2
 
 /**
  * Loaders
@@ -78,6 +82,8 @@ const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffe5 })
 // Video element function
 function VideoElement( videoID, x, y, z ) {
 
+    const obj = new THREE.Object3D
+
     const div = document.createElement( 'div' )
     div.setAttribute("class", "video_element")
 
@@ -88,7 +94,23 @@ function VideoElement( videoID, x, y, z ) {
     const object = new CSS3DObject( div )
     object.position.set( x, y, z )
 
-    return object
+    obj.css3dObject = object
+    obj.add(object)
+
+    // Invisible plane for clipping purposes
+    let material = new THREE.MeshPhongMaterial({
+        opacity	: 0.15,
+        color	: new THREE.Color( 0x000000 ),
+        blending: THREE.NoBlending
+    })
+    // dimensions are smaller than video with 2px on both X and Y axis in order to hide a little bit the white outline
+    let geometry = new THREE.BoxGeometry( 478, 358, 1 )
+    let mesh = new THREE.Mesh( geometry, material )
+    mesh.position.set(x, y, z)
+    obj.add( mesh );
+
+    return obj
+    // return object
 
 }
 
@@ -134,8 +156,9 @@ gltfLoader.load(
 )
   
 // Video element
-const youtube_video = new VideoElement( 'Bf_YemfEaDs', 0, 310, -535)
-scene.add( youtube_video )
+const youtube_video = new VideoElement( 'Bf_YemfEaDs', 0, 310, -532)
+root.add(youtube_video)
+scene.add( root )
  
 
 // Block iframe events when dragging camera
@@ -146,7 +169,9 @@ controls.addEventListener( 'end', function () {
     css3DContainer.classList.remove('inactive')
 })
 
-
+/**
+ * Animate
+ */
 function tick() {
     controls.update()
     css3DRenderer.render(scene, camera)
