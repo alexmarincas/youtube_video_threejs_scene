@@ -1,72 +1,81 @@
-import './style.css'
+import './primary.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { DoubleSide } from 'three';
 
 /**
- * Base
+ * Scene
  */
-// Canvas
-const canvas = document.querySelector('.canvas')
-
-// Scene
 const scene = new THREE.Scene()
 
 /**
- * Sizes
- */
-const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
-
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
-
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
-
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-})
-
-/**
- * Camera
+ * Cameras
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 1
-camera.position.y = 20
-camera.position.z = 1000
-scene.add(camera)
+const camera = new THREE.PerspectiveCamera(50, 2, 1, 5000)
+camera.position.set(0, (650 * Math.cos( 20 ) + 300), 1200)
+  
 
-// Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
-
-controls.addEventListener( 'start', function () {
-    canvas.classList.add('inactive')
+ /**
+ * Renderers
+ */
+const css3DContainer = document.querySelector('#css3d')
+const css3DRenderer = new CSS3DRenderer();
+css3DContainer.appendChild(css3DRenderer.domElement)
+  
+const webglCanvas = document.querySelector('#webgl')
+const webglRenderer = new THREE.WebGLRenderer({
+canvas: webglCanvas,
+antialias: true
 })
-controls.addEventListener( 'end', function () {
-    canvas.classList.remove('inactive')
-})
+webglRenderer.outputEncoding = THREE.sRGBEncoding
+webglRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+webglRenderer.setClearColor('#FF856B')
+ 
+/**
+ * Controls
+ */
+ const controls = new OrbitControls(camera, css3DContainer)
+ controls.enableDamping = true
+ controls.rotateSpeed = 4
 
 /**
- * Renderer
+ * Loaders
  */
-const renderer = new CSS3DRenderer();
-renderer.setSize(sizes.width, sizes.height)
-canvas.appendChild( renderer.domElement )
+// Texture loader
+const textureLoader = new THREE.TextureLoader()
 
+// Draco loader
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('draco/')
+
+// GLTF loader
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+/**
+ * Textures
+ */
+const bakedTexture = textureLoader.load('baked.jpg')
+bakedTexture.flipY = false
+bakedTexture.encoding = THREE.sRGBEncoding
+
+/**
+ * Materials
+ */
+// Baked material
+const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture, side: DoubleSide })
+
+// Pole light material
+const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffe5 })
 
 /**
  * Helper functions
  */
-// Element function
+// Video element function
 function VideoElement( videoID, x, y, z ) {
 
     const div = document.createElement( 'div' )
@@ -83,28 +92,66 @@ function VideoElement( videoID, x, y, z ) {
 
 }
 
-/**
- * Add elements to the scene
- */
- const group = new THREE.Group();
- group.add( new VideoElement( 'Bf_YemfEaDs', 0, 0, 240) );
- scene.add( group );
+// Window resize function
+function onWindowResize() {
+    const width = webglCanvas.clientWidth
+    const height = webglCanvas.clientHeight
+    
+    if (webglCanvas.width !== width || webglCanvas.height !== height) {
+        webglRenderer.setSize(width, height, false)
+        css3DRenderer.setSize(width, height, false)
+        camera.aspect = width / height
+        camera.updateProjectionMatrix()
+    }
+}
+  
+window.addEventListener('resize', onWindowResize, false)
+onWindowResize()
 
+/**
+ * Adding 3D models and html elements to the scene
+ */
+// 3D model
+gltfLoader.load(
+'portal.glb',
+    (gltf) =>
+    {
+        gltf.scene.scale.x = 300
+        gltf.scene.scale.y = 300
+        gltf.scene.scale.z = 300
+        scene.add(gltf.scene)
+
+        // Get each object
+        const bakedMesh = gltf.scene.children.find((child) => child.name === 'baked')
+        const poleLightAMesh = gltf.scene.children.find((child) => child.name === 'poleLightA')
+        const poleLightBMesh = gltf.scene.children.find((child) => child.name === 'poleLightB')
+
+        // Apply materials
+        bakedMesh.material = bakedMaterial
+        poleLightAMesh.material = poleLightMaterial
+        poleLightBMesh.material = poleLightMaterial
+    }
+)
+  
+// Video element
+const youtube_video = new VideoElement( 'Bf_YemfEaDs', 0, 310, -535)
+scene.add( youtube_video )
  
-/**
- * Animate
- */
 
-const tick = () =>
-{
-    // Update controls
+// Block iframe events when dragging camera
+controls.addEventListener( 'start', function () {
+    css3DContainer.classList.add('inactive')
+})
+controls.addEventListener( 'end', function () {
+    css3DContainer.classList.remove('inactive')
+})
+
+
+function tick() {
     controls.update()
-
-    // Render
-    renderer.render(scene, camera)
-
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
+    css3DRenderer.render(scene, camera)
+    webglRenderer.render(scene, camera)
+    requestAnimationFrame(tick)
 }
 
-tick()
+requestAnimationFrame(tick)
